@@ -2,11 +2,6 @@ apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
   name: block-latest-tag
-  annotations:
-    policies.kyverno.io/title: Prohibir imagen con tag latest
-    policies.kyverno.io/description: >-
-      Bloquea cualquier Pod que use una imagen con el tag "latest".
-      El versionamiento semántico (v1.x.x) es obligatorio.
 spec:
   validationFailureAction: Enforce
   background: false
@@ -21,17 +16,8 @@ spec:
                 - sa-p8-dev
                 - sa-p8-prod
       validate:
-        message: >-
-          El uso del tag 'latest' está prohibido por política de seguridad.
-          Use un tag semántico explícito como v1.0.0.
-        foreach:
-          - list: "request.object.spec.containers"
-            deny:
-              conditions:
-                any:
-                  - key: "{{ element.image }}"
-                    operator: Equals
-                    value: "*:latest"
-                  - key: "{{ element.image }}"
-                    operator: NotContains
-                    value: ":"
+        message: "El uso del tag 'latest' est� prohibido. Use un tag sem�ntico."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
