@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  STUDENT_ID: "201700936"
+  DB_HOST: "localhost"
+  DB_PORT: "5432"
+  DB_NAME: "banco_sa"
+  RABBITMQ_QUEUE: "notifications_queue"
+  RABBITMQ_EXCHANGE: "sa_exchange"
