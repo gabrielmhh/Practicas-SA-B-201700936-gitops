@@ -1,0 +1,102 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "api-gateway.fullname" . }}
+  labels:
+    {{- include "api-gateway.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount | default 2 }}
+  selector:
+    matchLabels:
+      {{- include "api-gateway.selectorLabels" . | nindent 6 }}
+  strategy:
+    canary:
+      steps:
+      - setWeight: 10
+      - pause:
+          duration: 30s
+      - analysis:
+          templates:
+          - templateName: http-success-rate
+      - setWeight: 30
+      - pause:
+          duration: 30s
+      - analysis:
+          templates:
+          - templateName: http-success-rate
+      - setWeight: 100
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ .Values.global | default dict | toJson | sha256sum }}
+      labels:
+        {{- include "api-gateway.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: gateway
+    spec:
+      serviceAccountName: {{ include "api-gateway.fullname" . }}-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api-gateway
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "8000"
+            - name: NODE_ENV
+              value: {{ .Values.global.environment | default "production" | quote }}
+            - name: AUTH_SERVICE_URL
+              value: "http://{{ .Release.Name }}-auth-service:3001"
+            - name: ACCOUNT_SERVICE_URL
+              value: "http://{{ .Release.Name }}-account-service:3002"
+            - name: TRANSACTION_SERVICE_URL
+              value: "http://{{ .Release.Name }}-transaction-service:3003"
+            - name: NOTIFICATION_SERVICE_URL
+              value: "http://{{ .Release.Name }}-notification-service:3004"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}

@@ -1,0 +1,30 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-non-root
+  annotations:
+    policies.kyverno.io/title: Exigir ejecución sin privilegios de root
+    policies.kyverno.io/description: >-
+      Todo contenedor debe ejecutarse como usuario no-root.
+      Evita escalaciones de privilegio en caso de vulnerabilidad en el contenedor.
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: check-non-root
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - sa-p8-dev
+                - sa-p8-prod
+      validate:
+        message: >-
+          Los contenedores deben ejecutarse con runAsNonRoot: true en el
+          securityContext. La ejecución como root está prohibida (Política P8).
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true

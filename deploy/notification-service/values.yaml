@@ -1,0 +1,24 @@
+global:
+  namespace: "sa-p8-prod"
+  environment: "production"
+
+replicaCount: 2
+image:
+  repository: "gabrielmhh/sa-platform-notification-service"
+  tag: "v1.0.0"
+  pullPolicy: "Always"
+resources:
+  limits:
+    cpu: "250m"
+    memory: "256Mi"
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+service:
+  type: ClusterIP
+  port: 3004

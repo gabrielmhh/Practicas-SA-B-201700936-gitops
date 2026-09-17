@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: http-success-rate
+  namespace: sa-p8-prod
+spec:
+  metrics:
+    - name: success-rate
+      # Ejecuta un Job de Kubernetes con curl para verificar el endpoint /health
+      # Si el Job falla (curl devuelve != 0), el análisis falla y Argo revierte
+      provider:
+        job:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: curl-check
+                    image: curlimages/curl:8.5.0
+                    command:
+                      - sh
+                      - -c
+                      - |
+                        echo "Verificando endpoint /health del api-gateway canary..."
+                        curl -sf --retry 5 --retry-delay 3 \
+                          http://sa-platform-api-gateway.sa-p8-prod.svc.cluster.local:8000/health
+                        EXIT=$?
+                        echo "Exit code: $EXIT"
+                        exit $EXIT
+                    resources:
+                      limits:
+                        cpu: "100m"
+                        memory: "64Mi"
+                      requests:
+                        cpu: "50m"
+                        memory: "32Mi"
+                    securityContext:
+                      runAsNonRoot: true
+                      runAsUser: 1000
+                restartPolicy: Never
+            backoffLimit: 0
+      # El análisis pasa si el Job termina con código 0
+      successCondition: "result == 0 || result == 'succeeded'"
+      failureLimit: 1
+      count: 1

@@ -1,0 +1,78 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: sa-api-gateway
+  namespace: sa-p8-prod
+  labels:
+    app: api-gateway
+    practice: p8
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api-gateway
+  strategy:
+    canary:
+      canaryService: sa-api-gateway-canary
+      stableService: sa-api-gateway-stable
+      steps:
+      - setWeight: 10
+      - pause:
+          duration: 30s
+      - analysis:
+          templates:
+          - templateName: http-success-rate
+      - setWeight: 30
+      - pause:
+          duration: 30s
+      - analysis:
+          templates:
+          - templateName: http-success-rate
+      - setWeight: 100
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: api-gateway
+          image: "gabrielmhh/sa-platform-api-gateway:v1.0.0"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}

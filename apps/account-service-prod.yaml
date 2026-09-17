@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sa-account-service-prod
+  namespace: argocd
+  labels:
+    practice: p8
+    student: "201700936"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/gabrielmhh/Practicas-SA-B-201700936-gitops
+    targetRevision: main
+    path: deploy/account-service
+    helm:
+      valueFiles:
+        - values-prod.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sa-p8-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false

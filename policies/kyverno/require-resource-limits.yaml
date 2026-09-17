@@ -1,0 +1,37 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-limits
+  annotations:
+    policies.kyverno.io/title: Exigir límites de CPU y memoria
+    policies.kyverno.io/description: >-
+      Todo contenedor debe declarar explícitamente limits de CPU y memoria.
+      Sin límites, un contenedor puede consumir todos los recursos del nodo.
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+    - name: check-container-limits
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - sa-p8-dev
+                - sa-p8-prod
+      validate:
+        message: >-
+          Todos los contenedores deben especificar resources.limits.cpu
+          y resources.limits.memory. Política de seguridad obligatoria P8.
+        foreach:
+          - list: "request.object.spec.containers"
+            deny:
+              conditions:
+                any:
+                  - key: "{{ element.resources.limits.cpu || '' }}"
+                    operator: Equals
+                    value: ""
+                  - key: "{{ element.resources.limits.memory || '' }}"
+                    operator: Equals
+                    value: ""

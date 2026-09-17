@@ -1,0 +1,6 @@
+apiVersion: v2
+name: transaction-service
+description: Subchart para el microservicio de transferencias en Python (GraphQL #2 - Strawberry)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: notification-service
+description: Subchart para el microservicio de notificaciones y consumidor AMQP (Node.js REST)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
