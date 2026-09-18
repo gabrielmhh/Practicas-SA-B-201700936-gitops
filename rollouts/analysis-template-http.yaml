@@ -1,4 +1,4 @@
-apiVersion: argoproj.io/v1alpha1
+﻿apiVersion: argoproj.io/v1alpha1
 kind: AnalysisTemplate
 metadata:
   name: http-success-rate
@@ -17,6 +17,6 @@ spec:
             spec:
               containers:
               - name: curl
-                image: curlimages/curl:latest
+                image: curlimages/curl:8.11.0
                 command: ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "http://sa-api-gateway-prod-api-gateway.sa-p8-prod.svc.cluster.local:8000/health"]
               restartPolicy: Never
