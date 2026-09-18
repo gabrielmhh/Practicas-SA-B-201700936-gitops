@@ -25,6 +25,9 @@ spec:
           templates:
           - templateName: http-success-rate
       - setWeight: 100
+      - analysis:
+          templates:
+          - templateName: http-success-rate
   template:
     metadata:
       annotations:
