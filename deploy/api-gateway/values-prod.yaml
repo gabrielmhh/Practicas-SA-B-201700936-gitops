@@ -1,4 +1,4 @@
-﻿# ESTE ARCHIVO ES ACTUALIZADO AUTOMATICAMENTE POR EL PIPELINE
+# ESTE ARCHIVO ES ACTUALIZADO AUTOMATICAMENTE POR EL PIPELINE
 # No editar manualmente el campo image.tag
 global:
   namespace: "sa-p8-prod"
@@ -8,7 +8,7 @@ replicaCount: 2
 
 image:
   repository: "gabrielmhh/sa-platform-api-gateway"
-  tag: "v1.0.2"
+  tag: "v1.0.3-bad"
   pullPolicy: "Always"
 
 resources:
