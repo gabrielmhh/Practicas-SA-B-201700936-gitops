@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: transaction-service
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/gabrielmhh/Practicas-SA-B-201700936-gitops.git
+    targetRevision: main
+    path: deploy/transaction-service
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sa-p8-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

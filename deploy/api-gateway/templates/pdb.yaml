@@ -1,7 +1,7 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "api-gateway.fullname" . }}-pdb
+  name: {{ include "api-gateway.fullname" . }}
   labels:
     {{- include "api-gateway.labels" . | nindent 4 }}
 spec:

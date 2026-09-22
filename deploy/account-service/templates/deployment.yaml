@@ -32,6 +32,19 @@ spec:
         fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - {{ include "account-service.name" . }}
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: account-service
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
