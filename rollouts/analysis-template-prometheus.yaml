@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: prometheus-canary-analysis
+  namespace: sa-p8-prod
+  labels:
+    practice: p10
+    governance: prometheus-metrics
+spec:
+  metrics:
+    # --------------------------------------------------------------------------
+    # Métrica 1: Tasa de Error HTTP 5xx sobre tráfico real del Canary
+    # --------------------------------------------------------------------------
+    - name: canary-error-rate
+      interval: 10s
+      count: 3
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://prometheus.sa-p8-prod.svc.cluster.local:9090
+          query: |
+            (
+              sum(rate(http_requests_total{app="api-gateway", status=~"5.*"}[1m]))
+              /
+              (sum(rate(http_requests_total{app="api-gateway"}[1m])) > 0)
+            ) or vector(0)
+      successCondition: "result[0] <= 0.02"
+
+    # --------------------------------------------------------------------------
+    # Métrica 2: Percentil 95 de Latencia (Duración < 300ms)
+    # --------------------------------------------------------------------------
+    - name: canary-latency-p95
+      interval: 10s
+      count: 3
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://prometheus.sa-p8-prod.svc.cluster.local:9090
+          query: |
+            (
+              histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app="api-gateway"}[1m])) by (le))
+            ) or vector(0.05)
+      successCondition: "result[0] <= 0.300"
