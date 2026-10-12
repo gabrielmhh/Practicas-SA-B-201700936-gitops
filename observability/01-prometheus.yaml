@@ -147,3 +147,87 @@ spec:
       name: web
   selector:
     app: prometheus
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: sa-p8-prod
+  labels:
+    app: prometheus
+data:
+  slo_rules.yaml: |
+    groups:
+      - name: slo_recording_rules
+        rules:
+          - record: job:http_requests:rate5m
+            expr: sum(rate(http_requests_total[5m])) by (app, status)
+          - record: job:http_requests:rate1h
+            expr: sum(rate(http_requests_total[1h])) by (app, status)
+          - record: sli:availability:ratio_rate5m
+            expr: |
+              (sum(rate(http_requests_total{status!~"5.*"}[5m])) / (sum(rate(http_requests_total[5m])) > 0)) or vector(1)
+          - record: sli:availability:ratio_rate1h
+            expr: |
+              (sum(rate(http_requests_total{status!~"5.*"}[1h])) / (sum(rate(http_requests_total[1h])) > 0)) or vector(1)
+          - record: sli:error_budget_burn_rate:1h
+            expr: |
+              ((sum(rate(http_requests_total{status=~"5.*"}[1h])) / (sum(rate(http_requests_total[1h])) > 0)) / 0.005) or vector(0)
+          - record: sli:error_budget_burn_rate:5m
+            expr: |
+              ((sum(rate(http_requests_total{status=~"5.*"}[5m])) / (sum(rate(http_requests_total[5m])) > 0)) / 0.005) or vector(0)
+          - record: sli:error_budget_burn_rate:6h
+            expr: |
+              ((sum(rate(http_requests_total{status=~"5.*"}[6h])) / (sum(rate(http_requests_total[6h])) > 0)) / 0.005) or vector(0)
+          - record: sli:error_budget_burn_rate:30m
+            expr: |
+              ((sum(rate(http_requests_total{status=~"5.*"}[30m])) / (sum(rate(http_requests_total[30m])) > 0)) / 0.005) or vector(0)
+          - record: sli:latency_under_300ms:ratio_rate5m
+            expr: |
+              (sum(rate(http_request_duration_seconds_bucket{le="0.3"}[5m])) / (sum(rate(http_request_duration_seconds_count[5m])) > 0)) or vector(1)
+          - record: sli:latency_p95_seconds:rate5m
+            expr: |
+              histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, app)) or vector(0.05)
+
+      - name: slo_burn_rate_alerts
+        rules:
+          - alert: ErrorBudgetFastBurn
+            expr: |
+              sli:error_budget_burn_rate:1h > 14.4
+              and
+              sli:error_budget_burn_rate:5m > 14.4
+            for: 2m
+            labels:
+              severity: critical
+              slo: availability
+            annotations:
+              summary: "Consumo crítico del presupuesto de error (Burn Rate > 14.4x)"
+              description: "Tasa de error crítica consumiendo el presupuesto de 14 días en menos de 24 horas."
+              runbook_url: "https://github.com/gabrielmhh/Practicas-SA-B-201700936/blob/main/P10/runbooks/runbook-api-high-error-rate.md"
+
+          - alert: ErrorBudgetSlowBurn
+            expr: |
+              sli:error_budget_burn_rate:6h > 3.0
+              and
+              sli:error_budget_burn_rate:30m > 3.0
+            for: 15m
+            labels:
+              severity: warning
+              slo: availability
+            annotations:
+              summary: "Consumo moderado y sostenido del presupuesto de error (Burn Rate > 3x)"
+              description: "Consumo estimado del 5% del presupuesto de error en 6 horas."
+              runbook_url: "https://github.com/gabrielmhh/Practicas-SA-B-201700936/blob/main/P10/runbooks/runbook-api-high-error-rate.md"
+
+          - alert: TransactionLatencySLODegraded
+            expr: |
+              sli:latency_under_300ms:ratio_rate5m < 0.95
+            for: 3m
+            labels:
+              severity: warning
+              slo: latency
+            annotations:
+              summary: "Incumplimiento de SLO 2 de Latencia (p95 > 300ms)"
+              description: "Menos del 95% de las peticiones se completan bajo el umbral de 300ms."
+              runbook_url: "https://github.com/gabrielmhh/Practicas-SA-B-201700936/blob/main/P10/runbooks/runbook-transaction-high-latency.md"
+
