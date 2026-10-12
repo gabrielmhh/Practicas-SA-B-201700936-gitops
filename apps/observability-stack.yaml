@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sa-observability-stack
+  namespace: argocd
+  labels:
+    practice: p10
+    student: "201700936"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/gabrielmhh/Practicas-SA-B-201700936-gitops
+    targetRevision: main
+    path: observability
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sa-p8-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
