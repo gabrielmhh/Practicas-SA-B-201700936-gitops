@@ -27,7 +27,7 @@ data:
       - job_name: 'api-gateway'
         metrics_path: /metrics
         static_configs:
-          - targets: ['sa-api-gateway-stable:8000', 'sa-api-gateway-canary:8000']
+          - targets: ['api-gateway-api-gateway:8000', 'sa-api-gateway-prod-api-gateway:8000']
         relabel_configs:
           - source_labels: [__address__]
             target_label: instance
@@ -37,7 +37,7 @@ data:
       - job_name: 'account-service'
         metrics_path: /metrics
         static_configs:
-          - targets: ['sa-platform-account-service:3002']
+          - targets: ['account-service-account-service:3002', 'sa-account-service-prod-account-service:3002']
         relabel_configs:
           - target_label: app
             replacement: account-service
@@ -45,7 +45,7 @@ data:
       - job_name: 'auth-service'
         metrics_path: /metrics
         static_configs:
-          - targets: ['sa-platform-auth-service:3001']
+          - targets: ['auth-service-auth-service:3001', 'sa-auth-service-prod-auth-service:3001']
         relabel_configs:
           - target_label: app
             replacement: auth-service

@@ -17,17 +17,17 @@ spec:
           duration: 30s
       - analysis:
           templates:
-          - templateName: http-success-rate
+          - templateName: prometheus-canary-analysis
       - setWeight: 30
       - pause:
           duration: 30s
       - analysis:
           templates:
-          - templateName: http-success-rate
+          - templateName: prometheus-canary-analysis
       - setWeight: 100
       - analysis:
           templates:
-          - templateName: http-success-rate
+          - templateName: prometheus-canary-analysis
   template:
     metadata:
       annotations:
