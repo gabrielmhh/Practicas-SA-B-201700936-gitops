@@ -20,12 +20,7 @@ spec:
       provider:
         prometheus:
           address: http://prometheus.sa-p8-prod.svc.cluster.local:9090
-          query: |
-            (
-              sum(rate(http_requests_total{app="api-gateway", status=~"5.*", rollouts_pod_template_hash="{{args.canary-hash}}"}[1m]))
-              /
-              (sum(rate(http_requests_total{app="api-gateway", rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) > 0)
-            ) or vector(0)
+          query: (sum(rate(http_requests_total{app="api-gateway", status=~"5.*", rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) / (sum(rate(http_requests_total{app="api-gateway", rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) > 0)) or vector(0)
 
     # Métrica 2: Tasa de errores en el microservicio downstream account-service (SLO <= 2%)
     - name: canary-error-rate-account-service
@@ -36,12 +31,7 @@ spec:
       provider:
         prometheus:
           address: http://prometheus.sa-p8-prod.svc.cluster.local:9090
-          query: |
-            (
-              sum(rate(http_requests_total{app="account-service", status=~"5.*", rollouts_pod_template_hash="{{args.canary-hash}}"}[1m]))
-              /
-              (sum(rate(http_requests_total{app="account-service", rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) > 0)
-            ) or vector(0)
+          query: (sum(rate(http_requests_total{app="account-service", status=~"5.*", rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) / (sum(rate(http_requests_total{app="account-service", rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) > 0)) or vector(0)
 
     # Métrica 3: Latencia percentil 95 (p95) de la versión candidata (SLO <= 300ms / 0.300s)
     - name: canary-latency-p95
@@ -52,10 +42,4 @@ spec:
       provider:
         prometheus:
           address: http://prometheus.sa-p8-prod.svc.cluster.local:9090
-          query: |
-            (
-              histogram_quantile(0.95,
-                sum(rate(http_request_duration_seconds_bucket{app=~"api-gateway|account-service|auth-service", rollouts_pod_template_hash="{{args.canary-hash}}"}[1m]))
-                by (le)
-              )
-            ) or vector(0.05)
+          query: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app=~"api-gateway|account-service|auth-service", rollouts_pod_template_hash="{{args.canary-hash}}"}[1m])) by (le)) or vector(0.05)
